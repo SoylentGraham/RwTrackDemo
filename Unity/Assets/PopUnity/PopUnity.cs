@@ -127,8 +127,11 @@ public class PopUnity
 	[DllImport("PopUnity")]
 	private static extern void Cleanup ();
 
-	static private DebugLogDelegate	mDebugLogDelegate = new DebugLogDelegate( Log );
+	static private DebugLogDelegate	mDebugLogDelegate = new DebugLogDelegate(Log);
 	static private OnJobDelegate	mOnJobDelegate = new OnJobDelegate( OnJob );
+
+	public delegate void TDebugDelegate(String Log);
+	public static TDebugDelegate DebugDelegate;
 
 	public PopUnity()
 	{
@@ -145,9 +148,15 @@ public class PopUnity
 #endif
 	}
 
+	static void ConsoleDebugLog(String Log)
+	{
+		UnityEngine.Debug.Log (Log);
+	}
+
 	static void Log(string str)
 	{
-		UnityEngine.Debug.Log("PopUnity: " + str);
+		if (DebugDelegate != null)
+			DebugDelegate ("PopUnity: " + str);
 	}
 
 	static void OnJob(ref TJobInterface JobInterface)
@@ -169,9 +178,23 @@ public class PopUnity
 		}
 	}
 
+	static public void Start()
+	{
+		//	gr: only add the console log in editor mode. Can't see it in builds, and saves CPU time if we blindly flush messages by having no delegates
+#if UNITY_EDITOR
+	//	DebugDelegate += ConsoleDebugLog;
+#endif
+	}
+
 	static public void Update()
 	{
-		FlushDebug (Marshal.GetFunctionPointerForDelegate (mDebugLogDelegate));
+		//	if we have no listeners, do fast flush
+		bool HasListeners = (DebugDelegate!=null) && (DebugDelegate.GetInvocationList().Length > 0);
+		HasListeners &= (mDebugLogDelegate!=null) &&(mDebugLogDelegate.GetInvocationList().Length > 0);
+		if ( HasListeners )
+			FlushDebug (Marshal.GetFunctionPointerForDelegate (mDebugLogDelegate));
+		else
+			FlushDebug (System.IntPtr.Zero);
 
 		//	pop all jobs
 		bool More = PopJob (Marshal.GetFunctionPointerForDelegate (mOnJobDelegate));

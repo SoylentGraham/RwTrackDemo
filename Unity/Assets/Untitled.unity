@@ -105,7 +105,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d421696749fc4b8f80f54a749c6a41f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mTexture: {fileID: 0}
   MaterialForTexture: {fileID: 2100000, guid: e74d3e26f07734ed490c43ae10a0770b, type: 2}
 --- !u!81 &1618627655
 AudioListener:
