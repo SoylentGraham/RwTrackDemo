@@ -1,3 +1,6 @@
+# build in root
+*.app
+
 # =============== #
 # Unity generated #
 # =============== #

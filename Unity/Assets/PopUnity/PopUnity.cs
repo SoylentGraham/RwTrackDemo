@@ -164,7 +164,8 @@ public class PopUnity
 		//	turn into the more clever c# class
 		PopJob Job = new PopJob( JobInterface );
 		UnityEngine.Debug.Log ("job! " + Job.Command );
-		UnityEngine.Debug.Log ("(error: " + Job.Error);
+		if ( Job.Error != null )
+			UnityEngine.Debug.Log ("(error: " + Job.Error);
 
 		//	send job to handler
 		try
