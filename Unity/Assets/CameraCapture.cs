@@ -7,10 +7,10 @@ using System.Runtime.InteropServices;
 
 public class CameraCapture : MonoBehaviour {
 
-	private String ForkExeCommand = "PopCameraTrack --childmode=1 --binarystdio=1";
-	private String	JobString = "subscribenewfeatures serial=0x1a11000005ac8510 asbinary=1 memfile=1";
-	//private String ForkExeCommand = "PopCapture --childmode=1 --binarystdio=1";
-	//private String	JobString = "subscribenewframe serial=isight memfile=1";
+//	private String ForkExeCommand = "PopCameraTrack --childmode=1 --binarystdio=1";
+//	private String	JobString = "subscribenewfeatures serial=0x1a11000005ac8510 asbinary=1 memfile=1";
+	private String ForkExeCommand = "PopCapture --childmode=1 --binarystdio=1";
+	private String	JobString = "subscribenewframe serial=face memfile=1";
 	//private String	ForkExeCommand = "fork:pwd";
 	private PopUnityChannel	mChannel = null;
 	private Texture2D mTexture;
@@ -27,7 +27,7 @@ public class CameraCapture : MonoBehaviour {
 	void Start()
 	{
 		PopUnity.Start();
-//		PopUnity.DebugDelegate += GuiLog;
+		PopUnity.DebugDelegate += GuiLog;
 
 		//	need to CREATE a texture. overwriting an existing one doesn't work...
 		if (mTexture == null) {

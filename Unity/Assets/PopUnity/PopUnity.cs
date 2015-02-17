@@ -183,7 +183,7 @@ public class PopUnity
 	{
 		//	gr: only add the console log in editor mode. Can't see it in builds, and saves CPU time if we blindly flush messages by having no delegates
 #if UNITY_EDITOR
-	//	DebugDelegate += ConsoleDebugLog;
+		DebugDelegate += ConsoleDebugLog;
 #endif
 	}
 
