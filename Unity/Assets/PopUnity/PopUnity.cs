@@ -125,7 +125,7 @@ public class PopUnity
 
 
 	[DllImport("PopUnity")]
-	private static extern void Cleanup ();
+	private static extern void OnStopped ();
 
 	static private DebugLogDelegate	mDebugLogDelegate = new DebugLogDelegate(Log);
 	static private OnJobDelegate	mOnJobDelegate = new OnJobDelegate( OnJob );
@@ -144,7 +144,7 @@ public class PopUnity
 	{
 #if UNITY_EDITOR
 		if (UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode && UnityEditor.EditorApplication.isPlaying)
-			Cleanup();
+			OnStopped();
 #endif
 	}
 

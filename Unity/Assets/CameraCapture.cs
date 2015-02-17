@@ -84,7 +84,7 @@ public class CameraCapture : MonoBehaviour {
 		String LogString = String.Join("\n", mPopUnityDebugLog.ToArray() );
 			GUI.Label (rect, LogString );
 
-		//GUI.DrawTexture (rect, mTexture);
+		GUI.DrawTexture (rect, mTexture);
 	}
 
 	void OnPostRender()
