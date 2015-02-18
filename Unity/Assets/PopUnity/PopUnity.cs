@@ -5,6 +5,24 @@ using System;
 using System.Runtime.InteropServices;
 
 
+
+public struct TFeatureBinRing
+{
+	bool		a,b,c,d,e,f;
+};
+
+public struct TFeatureMatch
+{
+	public UInt32	mCoord_x;
+	public UInt32	mCoord_y;
+	float			mScore;
+	TFeatureBinRing	mFeature;
+	UInt32			mScoreCoord_x;
+	UInt32			mScoreCoord_y;
+	TFeatureBinRing	mSourceFeature;
+};
+
+
 public struct TJobInterface
 {
 	public System.IntPtr	pJob;
@@ -74,7 +92,22 @@ public class PopJob
 		Height = 0;
 		return PopUnity.GetJobParam_PixelsWidthHeight( ref mInterface, Param, ref Width, ref Height );
 	}
-	
+
+	public bool GetParamArray(string Param,string ElementTypeName,ref List<TFeatureMatch> Array)
+	{
+		TFeatureMatch[] Buffer = new TFeatureMatch[100];
+		int ElementsRead = PopUnity.GetJobParam_Array( ref mInterface, Param, ElementTypeName, ref Buffer, Buffer.Length );
+		if (ElementsRead < 0) {
+			Array.Clear ();
+			return false;
+		}
+
+		Array.Clear ();
+		for (int i=0; i<Math.Min( Buffer.Length, ElementsRead); i++)
+			Array.Add (Buffer [i]);
+
+		return true;
+	}
 }
 
 
@@ -122,7 +155,8 @@ public class PopUnity
 	[DllImport("PopUnity", CallingConvention = CallingConvention.Cdecl)]
 	public static extern bool GetJobParam_PixelsWidthHeight(ref TJobInterface JobInterface,string Param,ref int Width,ref int Height);
 	
-
+	[DllImport("PopUnity", CallingConvention = CallingConvention.Cdecl)]
+	public static extern int GetJobParam_Array(ref TJobInterface JobInterface,string Param,string ElementTypeName,ref TFeatureMatch[] Array,int ArraySize);
 
 	[DllImport("PopUnity")]
 	private static extern void OnStopped ();

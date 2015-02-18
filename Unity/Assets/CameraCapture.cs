@@ -7,15 +7,16 @@ using System.Runtime.InteropServices;
 
 public class CameraCapture : MonoBehaviour {
 
-//	private String ForkExeCommand = "PopCameraTrack --childmode=1 --binarystdio=1";
-//	private String	JobString = "subscribenewfeatures serial=0x1a11000005ac8510 asbinary=1 memfile=1";
-	private String ForkExeCommand = "PopCapture --childmode=1 --binarystdio=1";
-	private String	JobString = "subscribenewframe serial=face memfile=1";
+	private String ForkExeCommand = "PopCameraTrack --childmode=1 --binarystdio=1";
+	private String	JobString = "subscribenewfeatures serial=0x1a11000005ac8510 asbinary=1 memfile=1";
+//	private String ForkExeCommand = "PopCapture --childmode=1 --binarystdio=1";
+//	private String	JobString = "subscribenewframe serial=face memfile=1";
 	//private String	ForkExeCommand = "fork:pwd";
 	private PopUnityChannel	mChannel = null;
 	private Texture2D mTexture;
 	public Material MaterialForTexture;
 	static public List<String> mPopUnityDebugLog = new List<String>();
+	public List<TFeatureMatch> mFeatures;
 
 	static void GuiLog(String Log)
 	{
@@ -40,10 +41,11 @@ public class CameraCapture : MonoBehaviour {
 
 		PopUnity.AssignJobHandler("re:getframe", ((Job) => this.OnGetFrameReply(Job)) );
 		PopUnity.AssignJobHandler("newframe", ((Job) => this.OnGetFrameReply(Job)) );
+		PopUnity.AssignJobHandler("newfeatures", ((Job) => this.OnNewFeatures(Job)) );
 
 		String ChannelAddress = ForkExeCommand;
 		if (!ForkExeCommand.StartsWith ("fork:")) {
-			ChannelAddress = "fork:" + Application.streamingAssetsPath + "/" + ForkExeCommand;
+			ChannelAddress = "fork:" + Application.streamingAssetsPath + "/" + ForkExeCommand + " --forkpath=" + Application.streamingAssetsPath + "/";
 		}
 
 		mChannel = new PopUnityChannel (ChannelAddress);
@@ -57,6 +59,12 @@ public class CameraCapture : MonoBehaviour {
 	void OnGetFrameReply(PopJob Job)
 	{
 		Job.GetParam("default",mTexture);
+	}
+
+	void OnNewFeatures(PopJob Job)
+	{
+		Debug.Log ("new features!");
+		Job.GetParamArray ("default", "tfeaturematch", ref mFeatures);
 	}
 
 	Rect StepRect(Rect rect)
