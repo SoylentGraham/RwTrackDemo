@@ -64,6 +64,8 @@ public class CameraCapture : MonoBehaviour {
 	void OnNewFeatures(PopJob Job)
 	{
 		Debug.Log ("new features!");
+		if (mFeatures == null)
+			mFeatures = new List<TFeatureMatch> ();
 		Job.GetParamArray ("default", "tfeaturematch", ref mFeatures);
 	}
 
@@ -73,9 +75,36 @@ public class CameraCapture : MonoBehaviour {
 		return rect;
 	}
 
+	private static Texture2D gRectTexture;
+	private static GUIStyle gRectStyle;
+	
+	// Note that this function is only meant to be called from OnGUI() functions.
+	public static void GUIDrawRect( Rect position, Color color )
+	{
+		if( gRectTexture == null )
+		{
+			gRectTexture = new Texture2D( 1, 1 );
+		}
+		
+		if( gRectStyle == null )
+		{
+			gRectStyle = new GUIStyle();
+		}
+		
+		gRectTexture.SetPixel( 0, 0, color );
+		gRectTexture.Apply();
+		
+		gRectStyle.normal.background = gRectTexture;
+		
+		GUI.Box( position, GUIContent.none, gRectStyle );
+		
+		
+	}
+
+
 	void OnGUI()
 	{
-
+		
 		Rect rect = new Rect ( 20, 20, Screen.width-40, 100 );
 		JobString = GUI.TextField (rect, JobString);
 		rect = StepRect (rect);
@@ -93,6 +122,20 @@ public class CameraCapture : MonoBehaviour {
 			GUI.Label (rect, LogString );
 
 		GUI.DrawTexture (rect, mTexture);
+
+
+		//	draw features
+		if (mFeatures != null) {
+			Color Colour = new Color (1.0f, 0.0f, 0.0f, 0.7f);
+			float CoordScaleX = 0.5f; 
+			float CoordScaleY = 0.5f; 
+			foreach (TFeatureMatch Feature in mFeatures) {
+				Colour.r = 1.0f - Feature.mScore;
+				Colour.g = Feature.mScore;
+				Rect FeatureRect = new Rect (Feature.mCoord_x * CoordScaleX, Feature.mCoord_y * CoordScaleY, 5, 5);
+				GUIDrawRect (FeatureRect, Colour);
+			}
+		}
 	}
 
 	void OnPostRender()

@@ -106,6 +106,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   MaterialForTexture: {fileID: 2100000, guid: e74d3e26f07734ed490c43ae10a0770b, type: 2}
+  mFeatures: []
 --- !u!81 &1618627655
 AudioListener:
   m_ObjectHideFlags: 0
