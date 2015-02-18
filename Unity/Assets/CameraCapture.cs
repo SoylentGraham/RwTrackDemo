@@ -7,16 +7,21 @@ using System.Runtime.InteropServices;
 
 public class CameraCapture : MonoBehaviour {
 
-	private String ForkExeCommand = "PopCameraTrack --childmode=1 --binarystdio=1";
-	private String	JobString = "subscribenewfeatures serial=0x1a11000005ac8510 asbinary=1 memfile=1";
-//	private String ForkExeCommand = "PopCapture --childmode=1 --binarystdio=1";
-//	private String	JobString = "subscribenewframe serial=face memfile=1";
-	//private String	ForkExeCommand = "fork:pwd";
-	private PopUnityChannel	mChannel = null;
+	private String CameraSerial = "face";
+
+	private PopUnityChannel	mTrackChannel = null;
+	private String TrackCommand = "PopCameraTrack --childmode=1 --binarystdio=1 --MatchStepX=18 --MatchStepY=15 ";
+
+	private PopUnityChannel	mCaptureChannel = null;
+	private String CaptureCommand = "PopCapture --childmode=1 --binarystdio=1";
+
 	private Texture2D mTexture;
 	public Material MaterialForTexture;
 	static public List<String> mPopUnityDebugLog = new List<String>();
 	public List<TFeatureMatch> mFeatures;
+
+	private int Height = 1;
+	private int Width = 1;
 
 	static void GuiLog(String Log)
 	{
@@ -28,7 +33,7 @@ public class CameraCapture : MonoBehaviour {
 	void Start()
 	{
 		PopUnity.Start();
-		PopUnity.DebugDelegate += GuiLog;
+//		PopUnity.DebugDelegate += GuiLog;
 
 		//	need to CREATE a texture. overwriting an existing one doesn't work...
 		if (mTexture == null) {
@@ -43,13 +48,34 @@ public class CameraCapture : MonoBehaviour {
 		PopUnity.AssignJobHandler("newframe", ((Job) => this.OnGetFrameReply(Job)) );
 		PopUnity.AssignJobHandler("newfeatures", ((Job) => this.OnNewFeatures(Job)) );
 
-		String ChannelAddress = ForkExeCommand;
-		if (!ForkExeCommand.StartsWith ("fork:")) {
-			ChannelAddress = "fork:" + Application.streamingAssetsPath + "/" + ForkExeCommand + " --forkpath=" + Application.streamingAssetsPath + "/";
-		}
+	}
 
-		mChannel = new PopUnityChannel (ChannelAddress);
-		mChannel.SendJob( JobString );
+	bool HasStartedTracking()
+	{
+		return (mCaptureChannel != null) && (mTrackChannel != null);
+	}
+
+	void StartTracking()
+	{
+		String TrackJobString = "subscribenewfeatures serial=" + CameraSerial + " asbinary=1 memfile=1";
+		String CaptureJobString = "subscribenewframe serial=" + CameraSerial + " asbinary=1 memfile=1";
+
+		String TrackChannelAddress = TrackCommand + " --serial=" + CameraSerial;
+
+		if (!TrackCommand.StartsWith ("fork:")) {
+			TrackChannelAddress = "fork:" + Application.streamingAssetsPath + "/" + TrackChannelAddress + " --forkpath=" + Application.streamingAssetsPath + "/";
+		}
+		mTrackChannel = new PopUnityChannel (TrackChannelAddress);
+		mTrackChannel.SendJob( TrackJobString );
+		
+		
+		
+		String CaptureChannelAddress = CaptureCommand;
+		if (!TrackCommand.StartsWith ("fork:")) {
+			CaptureChannelAddress = "fork:" + Application.streamingAssetsPath + "/" + CaptureCommand + " --forkpath=" + Application.streamingAssetsPath + "/";
+		}
+		mCaptureChannel = new PopUnityChannel (CaptureChannelAddress);
+		mCaptureChannel.SendJob( CaptureJobString );
 	}
 
 	void Update () {
@@ -58,7 +84,8 @@ public class CameraCapture : MonoBehaviour {
 
 	void OnGetFrameReply(PopJob Job)
 	{
-		Job.GetParam("default",mTexture);
+		Job.GetParam("default",mTexture,SoyPixelsFormat.Invalid,true);
+		Job.GetParamPixelsWidthHeight ("default", out Width, out Height);
 	}
 
 	void OnNewFeatures(PopJob Job)
@@ -66,7 +93,8 @@ public class CameraCapture : MonoBehaviour {
 		Debug.Log ("new features!");
 		if (mFeatures == null)
 			mFeatures = new List<TFeatureMatch> ();
-		Job.GetParamArray ("default", "tfeaturematch", ref mFeatures);
+		Job.GetParamArray ("default", "tfeaturematch", ref mFeatures, 1000 );
+		Job.GetParam("image",mTexture);
 	}
 
 	Rect StepRect(Rect rect)
@@ -104,37 +132,47 @@ public class CameraCapture : MonoBehaviour {
 
 	void OnGUI()
 	{
-		
-		Rect rect = new Rect ( 20, 20, Screen.width-40, 100 );
-		JobString = GUI.TextField (rect, JobString);
-		rect = StepRect (rect);
+		if (!HasStartedTracking ()) {
+			Rect rect = new Rect (20, 20, Screen.width - 40, 100);
+			CameraSerial = GUI.TextField (rect, CameraSerial);
+			rect = StepRect (rect);
 
-		if (GUI.Button (rect, "run command")) {
-			mChannel.SendJob (JobString);
+			if (GUI.Button (rect, "start with camera " + CameraSerial)) {
+				StartTracking ();
+			}
+			rect = StepRect (rect);
+
+			return;
 		}
-		rect = StepRect (rect);
-
-		//	fill
-		rect.height = Screen.height - rect.y;
-
-		rect = new Rect (0, 0, Screen.width, Screen.height);
-		String LogString = String.Join("\n", mPopUnityDebugLog.ToArray() );
-			GUI.Label (rect, LogString );
-
-		GUI.DrawTexture (rect, mTexture);
 
 
-		//	draw features
+		{
+			Rect rect = new Rect (0, 0, Screen.width, Screen.height);
+			String LogString = String.Join ("\n", mPopUnityDebugLog.ToArray ());
+			GUI.Label (rect, LogString);
+		}
+
+		if (mTexture != null) {
+			Rect rect = new Rect (0, 0, Screen.width, Screen.height);
+			GUI.DrawTexture (rect, mTexture);
+		}
+
 		if (mFeatures != null) {
+			int RectSize = 10;
+			//	draw features
 			Color Colour = new Color (1.0f, 0.0f, 0.0f, 0.7f);
-			float CoordScaleX = 0.5f; 
-			float CoordScaleY = 0.5f; 
 			foreach (TFeatureMatch Feature in mFeatures) {
 				Colour.r = 1.0f - Feature.mScore;
 				Colour.g = Feature.mScore;
-				Rect FeatureRect = new Rect (Feature.mCoord_x * CoordScaleX, Feature.mCoord_y * CoordScaleY, 5, 5);
+
+				//	normalise x/y
+				float x = (Feature.mCoord_x) / (float)Width;
+				float y = (Height - Feature.mCoord_y) / (float)Height;
+				//	scale xy to screen
+				Rect FeatureRect = new Rect (x * Screen.width, y * Screen.height, RectSize, RectSize);
 				GUIDrawRect (FeatureRect, Colour);
 			}
+
 		}
 	}
 
